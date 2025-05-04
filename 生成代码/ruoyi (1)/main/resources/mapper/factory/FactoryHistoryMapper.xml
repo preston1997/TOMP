@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.tompSys.mapper.FactoryHistoryMapper">
+    
+    <resultMap type="FactoryHistory" id="FactoryHistoryResult">
+        <result property="logId"    column="log_id"    />
+        <result property="factoryId"    column="factory_id"    />
+        <result property="changedField"    column="changed_field"    />
+        <result property="oldValue"    column="old_value"    />
+        <result property="newValue"    column="new_value"    />
+        <result property="changeTime"    column="change_time"    />
+        <result property="operatorId"    column="operator_id"    />
+    </resultMap>
+
+    <sql id="selectFactoryHistoryVo">
+        select log_id, factory_id, changed_field, old_value, new_value, change_time, operator_id from factory_history
+    </sql>
+
+    <select id="selectFactoryHistoryList" parameterType="FactoryHistory" resultMap="FactoryHistoryResult">
+        <include refid="selectFactoryHistoryVo"/>
+        <where>  
+            <if test="factoryId != null "> and factory_id = #{factoryId}</if>
+            <if test="changedField != null  and changedField != ''"> and changed_field = #{changedField}</if>
+            <if test="oldValue != null  and oldValue != ''"> and old_value = #{oldValue}</if>
+            <if test="newValue != null  and newValue != ''"> and new_value = #{newValue}</if>
+            <if test="changeTime != null "> and change_time = #{changeTime}</if>
+            <if test="operatorId != null "> and operator_id = #{operatorId}</if>
+        </where>
+    </select>
+    
+    <select id="selectFactoryHistoryByLogId" parameterType="Long" resultMap="FactoryHistoryResult">
+        <include refid="selectFactoryHistoryVo"/>
+        where log_id = #{logId}
+    </select>
+
+    <insert id="insertFactoryHistory" parameterType="FactoryHistory" useGeneratedKeys="true" keyProperty="logId">
+        insert into factory_history
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="factoryId != null">factory_id,</if>
+            <if test="changedField != null and changedField != ''">changed_field,</if>
+            <if test="oldValue != null">old_value,</if>
+            <if test="newValue != null and newValue != ''">new_value,</if>
+            <if test="changeTime != null">change_time,</if>
+            <if test="operatorId != null">operator_id,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="factoryId != null">#{factoryId},</if>
+            <if test="changedField != null and changedField != ''">#{changedField},</if>
+            <if test="oldValue != null">#{oldValue},</if>
+            <if test="newValue != null and newValue != ''">#{newValue},</if>
+            <if test="changeTime != null">#{changeTime},</if>
+            <if test="operatorId != null">#{operatorId},</if>
+         </trim>
+    </insert>
+
+    <update id="updateFactoryHistory" parameterType="FactoryHistory">
+        update factory_history
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="factoryId != null">factory_id = #{factoryId},</if>
+            <if test="changedField != null and changedField != ''">changed_field = #{changedField},</if>
+            <if test="oldValue != null">old_value = #{oldValue},</if>
+            <if test="newValue != null and newValue != ''">new_value = #{newValue},</if>
+            <if test="changeTime != null">change_time = #{changeTime},</if>
+            <if test="operatorId != null">operator_id = #{operatorId},</if>
+        </trim>
+        where log_id = #{logId}
+    </update>
+
+    <delete id="deleteFactoryHistoryByLogId" parameterType="Long">
+        delete from factory_history where log_id = #{logId}
+    </delete>
+
+    <delete id="deleteFactoryHistoryByLogIds" parameterType="String">
+        delete from factory_history where log_id in 
+        <foreach item="logId" collection="array" open="(" separator="," close=")">
+            #{logId}
+        </foreach>
+    </delete>
+</mapper>

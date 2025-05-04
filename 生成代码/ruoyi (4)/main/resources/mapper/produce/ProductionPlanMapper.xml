@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.tompSys.mapper.ProductionPlanMapper">
+    
+    <resultMap type="ProductionPlan" id="ProductionPlanResult">
+        <result property="planId"    column="plan_id"    />
+        <result property="subOrderId"    column="sub_order_id"    />
+        <result property="factoryId"    column="factory_id"    />
+        <result property="startDate"    column="start_date"    />
+        <result property="endDate"    column="end_date"    />
+        <result property="actualEndDate"    column="actual_end_date"    />
+        <result property="dailyProgress"    column="daily_progress"    />
+        <result property="currentStatus"    column="current_status"    />
+    </resultMap>
+
+    <resultMap id="ProductionPlanProductionLogResult" type="ProductionPlan" extends="ProductionPlanResult">
+        <collection property="productionLogList" ofType="ProductionLog" column="plan_id" select="selectProductionLogList" />
+    </resultMap>
+
+    <resultMap type="ProductionLog" id="ProductionLogResult">
+        <result property="logId"    column="log_id"    />
+        <result property="planId"    column="plan_id"    />
+        <result property="logType"    column="log_type"    />
+        <result property="logData"    column="log_data"    />
+        <result property="operatorId"    column="operator_id"    />
+        <result property="logTime"    column="log_time"    />
+    </resultMap>
+
+    <sql id="selectProductionPlanVo">
+        select plan_id, sub_order_id, factory_id, start_date, end_date, actual_end_date, daily_progress, current_status from production_plan
+    </sql>
+
+    <select id="selectProductionPlanList" parameterType="ProductionPlan" resultMap="ProductionPlanResult">
+        <include refid="selectProductionPlanVo"/>
+        <where>  
+            <if test="subOrderId != null "> and sub_order_id = #{subOrderId}</if>
+            <if test="factoryId != null "> and factory_id = #{factoryId}</if>
+            <if test="params.beginStartDate != null and params.beginStartDate != '' and params.endStartDate != null and params.endStartDate != ''"> and start_date between #{params.beginStartDate} and #{params.endStartDate}</if>
+            <if test="params.beginEndDate != null and params.beginEndDate != '' and params.endEndDate != null and params.endEndDate != ''"> and end_date between #{params.beginEndDate} and #{params.endEndDate}</if>
+            <if test="params.beginActualEndDate != null and params.beginActualEndDate != '' and params.endActualEndDate != null and params.endActualEndDate != ''"> and actual_end_date between #{params.beginActualEndDate} and #{params.endActualEndDate}</if>
+            <if test="dailyProgress != null  and dailyProgress != ''"> and daily_progress = #{dailyProgress}</if>
+            <if test="currentStatus != null  and currentStatus != ''"> and current_status = #{currentStatus}</if>
+        </where>
+    </select>
+    
+    <select id="selectProductionPlanByPlanId" parameterType="Long" resultMap="ProductionPlanProductionLogResult">
+        select plan_id, sub_order_id, factory_id, start_date, end_date, actual_end_date, daily_progress, current_status
+        from production_plan
+        where plan_id = #{planId}
+    </select>
+
+    <select id="selectProductionLogList" resultMap="ProductionLogResult">
+        select log_id, plan_id, log_type, log_data, operator_id, log_time
+        from production_log
+        where plan_id = #{plan_id}
+    </select>
+
+    <insert id="insertProductionPlan" parameterType="ProductionPlan" useGeneratedKeys="true" keyProperty="planId">
+        insert into production_plan
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="subOrderId != null">sub_order_id,</if>
+            <if test="factoryId != null">factory_id,</if>
+            <if test="startDate != null">start_date,</if>
+            <if test="endDate != null">end_date,</if>
+            <if test="actualEndDate != null">actual_end_date,</if>
+            <if test="dailyProgress != null">daily_progress,</if>
+            <if test="currentStatus != null">current_status,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="subOrderId != null">#{subOrderId},</if>
+            <if test="factoryId != null">#{factoryId},</if>
+            <if test="startDate != null">#{startDate},</if>
+            <if test="endDate != null">#{endDate},</if>
+            <if test="actualEndDate != null">#{actualEndDate},</if>
+            <if test="dailyProgress != null">#{dailyProgress},</if>
+            <if test="currentStatus != null">#{currentStatus},</if>
+         </trim>
+    </insert>
+
+    <update id="updateProductionPlan" parameterType="ProductionPlan">
+        update production_plan
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="subOrderId != null">sub_order_id = #{subOrderId},</if>
+            <if test="factoryId != null">factory_id = #{factoryId},</if>
+            <if test="startDate != null">start_date = #{startDate},</if>
+            <if test="endDate != null">end_date = #{endDate},</if>
+            <if test="actualEndDate != null">actual_end_date = #{actualEndDate},</if>
+            <if test="dailyProgress != null">daily_progress = #{dailyProgress},</if>
+            <if test="currentStatus != null">current_status = #{currentStatus},</if>
+        </trim>
+        where plan_id = #{planId}
+    </update>
+
+    <delete id="deleteProductionPlanByPlanId" parameterType="Long">
+        delete from production_plan where plan_id = #{planId}
+    </delete>
+
+    <delete id="deleteProductionPlanByPlanIds" parameterType="String">
+        delete from production_plan where plan_id in 
+        <foreach item="planId" collection="array" open="(" separator="," close=")">
+            #{planId}
+        </foreach>
+    </delete>
+    
+    <delete id="deleteProductionLogByPlanIds" parameterType="String">
+        delete from production_log where plan_id in 
+        <foreach item="planId" collection="array" open="(" separator="," close=")">
+            #{planId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteProductionLogByPlanId" parameterType="Long">
+        delete from production_log where plan_id = #{planId}
+    </delete>
+
+    <insert id="batchProductionLog">
+        insert into production_log( log_id, plan_id, log_type, log_data, operator_id, log_time) values
+        <foreach item="item" index="index" collection="list" separator=",">
+            ( #{item.logId}, #{item.planId}, #{item.logType}, #{item.logData}, #{item.operatorId}, #{item.logTime})
+        </foreach>
+    </insert>
+</mapper>

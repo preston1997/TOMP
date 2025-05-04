@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.tompSys.mapper.ProductionLogMapper">
+    
+    <resultMap type="ProductionLog" id="ProductionLogResult">
+        <result property="logId"    column="log_id"    />
+        <result property="planId"    column="plan_id"    />
+        <result property="logType"    column="log_type"    />
+        <result property="logData"    column="log_data"    />
+        <result property="operatorId"    column="operator_id"    />
+        <result property="logTime"    column="log_time"    />
+    </resultMap>
+
+    <sql id="selectProductionLogVo">
+        select log_id, plan_id, log_type, log_data, operator_id, log_time from production_log
+    </sql>
+
+    <select id="selectProductionLogList" parameterType="ProductionLog" resultMap="ProductionLogResult">
+        <include refid="selectProductionLogVo"/>
+        <where>  
+            <if test="planId != null "> and plan_id = #{planId}</if>
+            <if test="logType != null  and logType != ''"> and log_type = #{logType}</if>
+            <if test="logData != null  and logData != ''"> and log_data like concat('%', #{logData}, '%')</if>
+            <if test="operatorId != null "> and operator_id = #{operatorId}</if>
+            <if test="params.beginLogTime != null and params.beginLogTime != '' and params.endLogTime != null and params.endLogTime != ''"> and log_time between #{params.beginLogTime} and #{params.endLogTime}</if>
+        </where>
+    </select>
+    
+    <select id="selectProductionLogByLogId" parameterType="Long" resultMap="ProductionLogResult">
+        <include refid="selectProductionLogVo"/>
+        where log_id = #{logId}
+    </select>
+
+    <insert id="insertProductionLog" parameterType="ProductionLog" useGeneratedKeys="true" keyProperty="logId">
+        insert into production_log
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="planId != null">plan_id,</if>
+            <if test="logType != null and logType != ''">log_type,</if>
+            <if test="logData != null">log_data,</if>
+            <if test="operatorId != null">operator_id,</if>
+            <if test="logTime != null">log_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="planId != null">#{planId},</if>
+            <if test="logType != null and logType != ''">#{logType},</if>
+            <if test="logData != null">#{logData},</if>
+            <if test="operatorId != null">#{operatorId},</if>
+            <if test="logTime != null">#{logTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateProductionLog" parameterType="ProductionLog">
+        update production_log
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="planId != null">plan_id = #{planId},</if>
+            <if test="logType != null and logType != ''">log_type = #{logType},</if>
+            <if test="logData != null">log_data = #{logData},</if>
+            <if test="operatorId != null">operator_id = #{operatorId},</if>
+            <if test="logTime != null">log_time = #{logTime},</if>
+        </trim>
+        where log_id = #{logId}
+    </update>
+
+    <delete id="deleteProductionLogByLogId" parameterType="Long">
+        delete from production_log where log_id = #{logId}
+    </delete>
+
+    <delete id="deleteProductionLogByLogIds" parameterType="String">
+        delete from production_log where log_id in 
+        <foreach item="logId" collection="array" open="(" separator="," close=")">
+            #{logId}
+        </foreach>
+    </delete>
+</mapper>

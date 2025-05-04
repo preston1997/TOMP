@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.tompSys.mapper.AfterSalesMapper">
+    
+    <resultMap type="AfterSales" id="AfterSalesResult">
+        <result property="caseId"    column="case_id"    />
+        <result property="subOrderId"    column="sub_order_id"    />
+        <result property="type"    column="type"    />
+        <result property="description"    column="description"    />
+        <result property="status"    column="status"    />
+        <result property="compensation"    column="compensation"    />
+        <result property="createTime"    column="create_time"    />
+        <result property="resolveTime"    column="resolve_time"    />
+    </resultMap>
+
+    <sql id="selectAfterSalesVo">
+        select case_id, sub_order_id, type, description, status, compensation, create_time, resolve_time from after_sales
+    </sql>
+
+    <select id="selectAfterSalesList" parameterType="AfterSales" resultMap="AfterSalesResult">
+        <include refid="selectAfterSalesVo"/>
+        <where>  
+            <if test="caseId != null "> and case_id = #{caseId}</if>
+            <if test="subOrderId != null "> and sub_order_id = #{subOrderId}</if>
+            <if test="type != null  and type != ''"> and type = #{type}</if>
+            <if test="description != null  and description != ''"> and description like concat('%', #{description}, '%')</if>
+            <if test="status != null  and status != ''"> and status = #{status}</if>
+            <if test="params.beginCompensation != null and params.beginCompensation != '' and params.endCompensation != null and params.endCompensation != ''"> and compensation between #{params.beginCompensation} and #{params.endCompensation}</if>
+            <if test="resolveTime != null "> and resolve_time = #{resolveTime}</if>
+        </where>
+    </select>
+    
+    <select id="selectAfterSalesByCaseId" parameterType="Long" resultMap="AfterSalesResult">
+        <include refid="selectAfterSalesVo"/>
+        where case_id = #{caseId}
+    </select>
+
+    <insert id="insertAfterSales" parameterType="AfterSales" useGeneratedKeys="true" keyProperty="caseId">
+        insert into after_sales
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="subOrderId != null">sub_order_id,</if>
+            <if test="type != null and type != ''">type,</if>
+            <if test="description != null and description != ''">description,</if>
+            <if test="status != null">status,</if>
+            <if test="compensation != null">compensation,</if>
+            <if test="createTime != null">create_time,</if>
+            <if test="resolveTime != null">resolve_time,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="subOrderId != null">#{subOrderId},</if>
+            <if test="type != null and type != ''">#{type},</if>
+            <if test="description != null and description != ''">#{description},</if>
+            <if test="status != null">#{status},</if>
+            <if test="compensation != null">#{compensation},</if>
+            <if test="createTime != null">#{createTime},</if>
+            <if test="resolveTime != null">#{resolveTime},</if>
+         </trim>
+    </insert>
+
+    <update id="updateAfterSales" parameterType="AfterSales">
+        update after_sales
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="subOrderId != null">sub_order_id = #{subOrderId},</if>
+            <if test="type != null and type != ''">type = #{type},</if>
+            <if test="description != null and description != ''">description = #{description},</if>
+            <if test="status != null">status = #{status},</if>
+            <if test="compensation != null">compensation = #{compensation},</if>
+            <if test="createTime != null">create_time = #{createTime},</if>
+            <if test="resolveTime != null">resolve_time = #{resolveTime},</if>
+        </trim>
+        where case_id = #{caseId}
+    </update>
+
+    <delete id="deleteAfterSalesByCaseId" parameterType="Long">
+        delete from after_sales where case_id = #{caseId}
+    </delete>
+
+    <delete id="deleteAfterSalesByCaseIds" parameterType="String">
+        delete from after_sales where case_id in 
+        <foreach item="caseId" collection="array" open="(" separator="," close=")">
+            #{caseId}
+        </foreach>
+    </delete>
+</mapper>

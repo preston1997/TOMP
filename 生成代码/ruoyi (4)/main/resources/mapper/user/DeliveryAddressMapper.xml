@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.tompSys.mapper.DeliveryAddressMapper">
+    
+    <resultMap type="DeliveryAddress" id="DeliveryAddressResult">
+        <result property="addressId"    column="address_id"    />
+        <result property="userId"    column="user_id"    />
+        <result property="recipient"    column="recipient"    />
+        <result property="phone"    column="phone"    />
+        <result property="address"    column="address"    />
+        <result property="isDefault"    column="is_default"    />
+    </resultMap>
+
+    <sql id="selectDeliveryAddressVo">
+        select address_id, user_id, recipient, phone, address, is_default from delivery_address
+    </sql>
+
+    <select id="selectDeliveryAddressList" parameterType="DeliveryAddress" resultMap="DeliveryAddressResult">
+        <include refid="selectDeliveryAddressVo"/>
+        <where>  
+            <if test="userId != null "> and user_id = #{userId}</if>
+            <if test="recipient != null  and recipient != ''"> and recipient like concat('%', #{recipient}, '%')</if>
+            <if test="phone != null  and phone != ''"> and phone like concat('%', #{phone}, '%')</if>
+            <if test="address != null  and address != ''"> and address like concat('%', #{address}, '%')</if>
+            <if test="isDefault != null "> and is_default = #{isDefault}</if>
+        </where>
+    </select>
+    
+    <select id="selectDeliveryAddressByAddressId" parameterType="Long" resultMap="DeliveryAddressResult">
+        <include refid="selectDeliveryAddressVo"/>
+        where address_id = #{addressId}
+    </select>
+
+    <insert id="insertDeliveryAddress" parameterType="DeliveryAddress" useGeneratedKeys="true" keyProperty="addressId">
+        insert into delivery_address
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="userId != null">user_id,</if>
+            <if test="recipient != null and recipient != ''">recipient,</if>
+            <if test="phone != null and phone != ''">phone,</if>
+            <if test="address != null and address != ''">address,</if>
+            <if test="isDefault != null">is_default,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="userId != null">#{userId},</if>
+            <if test="recipient != null and recipient != ''">#{recipient},</if>
+            <if test="phone != null and phone != ''">#{phone},</if>
+            <if test="address != null and address != ''">#{address},</if>
+            <if test="isDefault != null">#{isDefault},</if>
+         </trim>
+    </insert>
+
+    <update id="updateDeliveryAddress" parameterType="DeliveryAddress">
+        update delivery_address
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userId != null">user_id = #{userId},</if>
+            <if test="recipient != null and recipient != ''">recipient = #{recipient},</if>
+            <if test="phone != null and phone != ''">phone = #{phone},</if>
+            <if test="address != null and address != ''">address = #{address},</if>
+            <if test="isDefault != null">is_default = #{isDefault},</if>
+        </trim>
+        where address_id = #{addressId}
+    </update>
+
+    <delete id="deleteDeliveryAddressByAddressId" parameterType="Long">
+        delete from delivery_address where address_id = #{addressId}
+    </delete>
+
+    <delete id="deleteDeliveryAddressByAddressIds" parameterType="String">
+        delete from delivery_address where address_id in 
+        <foreach item="addressId" collection="array" open="(" separator="," close=")">
+            #{addressId}
+        </foreach>
+    </delete>
+</mapper>
