@@ -7,6 +7,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="Orders" id="OrdersResult">
         <result property="orderId"    column="order_id"    />
         <result property="customerId"    column="customer_id"    />
+        <result property="customerName" column="customer_name"/>
         <result property="createTime"    column="create_time"    />
         <result property="status"    column="status"    />
         <result property="cancelReason"    column="cancel_reason"    />
@@ -28,7 +29,11 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectOrdersVo">
-        select order_id, customer_id, create_time, status, cancel_reason, total_amount from orders
+        select 
+        o.order_id, o.customer_id, u.user_name as customer_name, 
+        o.create_time, o.status, o.cancel_reason, o.total_amount 
+    from orders o
+    left join sys_user u on o.customer_id = u.user_id
     </sql>
 
     <select id="selectOrdersList" parameterType="Orders" resultMap="OrdersResult">

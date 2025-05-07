@@ -24,6 +24,11 @@ public class Orders extends BaseEntity
     @Excel(name = "客户ID")
     private Long customerId;
 
+    /** 客户名称（新增字段） */
+    @Excel(name = "客户名称")
+    private String customerName;
+    
+
     /** 订单状态 */
     @Excel(name = "订单状态")
     private String status;
@@ -38,6 +43,17 @@ public class Orders extends BaseEntity
 
     /** 子订单列表信息 */
     private List<SubOrder> subOrderList;
+
+
+    // 添加getter/setter
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
 
     public void setOrderId(Long orderId) 
     {

@@ -49,6 +49,7 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="订单ID" align="center" prop="orderId" />
       <el-table-column label="客户ID" align="center" prop="customerId" />
+      <el-table-column label="客户名称" align="center" prop="customerName" />
       <el-table-column label="订单状态" align="center" prop="status" />
       <el-table-column label="取消原因" align="center" prop="cancelReason" />
       <el-table-column label="订单预算" align="center" prop="totalAmount" />
@@ -115,14 +116,15 @@
                 </template>
               </el-table-column>
               <el-table-column label="交货期限" prop="deadline" width="240">
-            <template slot-scope="scope">
-              <el-date-picker clearable v-model="scope.row.deadline" type="date" value-format="yyyy-MM-dd" placeholder="请选择交货期限" />
-            </template>
-          </el-table-column>
+                <template slot-scope="scope">
+                  <el-date-picker clearable v-model="scope.row.deadline" type="date" value-format="yyyy-MM-dd"
+                    placeholder="请选择交货期限" />
+                </template>
+              </el-table-column>
               <el-table-column label="质量要求" prop="qualityStandard" width="200">
                 <template slot-scope="scope">
-                  <el-slider v-model="scope.row.qualityStandard" :min="0" :max="1" :step="0.01"  show-input-controls
-                    :disabled="title === '查看订单'" ></el-slider>
+                  <el-slider v-model="scope.row.qualityStandard" :min="0" :max="1" :step="0.01" show-input-controls
+                    :disabled="title === '查看订单'"></el-slider>
                 </template>
               </el-table-column>
               <el-table-column label="生产要求文件" prop="productionFile" width="300">

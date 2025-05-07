@@ -98,8 +98,8 @@
 
     <el-table v-loading="loading" :data="subOrderList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="子订单ID" align="center" prop="subOrderId" />
       <el-table-column label="主订单ID" align="center" prop="orderId" />
+      <el-table-column label="子订单ID" align="center" prop="subOrderId" />
       <el-table-column label="产品类型" align="center" prop="productId" />
       <el-table-column label="订购数量" align="center" prop="quantity" />
       <el-table-column label="交货期限" align="center" prop="deadline" width="180">
