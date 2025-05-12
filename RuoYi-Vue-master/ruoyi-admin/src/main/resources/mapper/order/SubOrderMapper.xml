@@ -7,11 +7,13 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     <resultMap type="SubOrder" id="SubOrderResult">
         <result property="subOrderId"    column="sub_order_id"    />
         <result property="orderId"    column="order_id"    />
+        <result property="customerName" column="customer_name" />
         <result property="productId"    column="product_id"    />
         <result property="quantity"    column="quantity"    />
         <result property="deadline"    column="deadline"    />
         <result property="qualityStandard"    column="quality_standard"    />
         <result property="productionFile"    column="production_file"    />
+        
     </resultMap>
 
     <resultMap id="SubOrderProductionPlanResult" type="SubOrder" extends="SubOrderResult">
@@ -30,7 +32,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </resultMap>
 
     <sql id="selectSubOrderVo">
-        select sub_order_id, order_id, product_id, quantity, deadline, quality_standard, production_file from sub_order
+        select sub_order_id, order_id, customer_name,product_id, quantity, deadline, quality_standard, production_file from sub_order
     </sql>
 
     <select id="selectSubOrderList" parameterType="SubOrder" resultMap="SubOrderResult">
@@ -46,7 +48,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </select>
     
     <select id="selectSubOrderBySubOrderId" parameterType="Long" resultMap="SubOrderProductionPlanResult">
-        select sub_order_id, order_id, product_id, quantity, deadline, quality_standard, production_file
+        select sub_order_id, order_id,customer_name, product_id, quantity, deadline, quality_standard, production_file
         from sub_order
         where sub_order_id = #{subOrderId}
     </select>
@@ -61,6 +63,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         insert into sub_order
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="orderId != null">order_id,</if>
+            <if test="customerName != null and customerName != ''">customer_name,</if>
             <if test="productId != null">product_id,</if>
             <if test="quantity != null">quantity,</if>
             <if test="deadline != null">deadline,</if>
@@ -69,6 +72,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
          </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="orderId != null">#{orderId},</if>
+            <if test="customerName != null and customerName != ''">#{customerName},</if>
             <if test="productId != null">#{productId},</if>
             <if test="quantity != null">#{quantity},</if>
             <if test="deadline != null">#{deadline},</if>
@@ -82,6 +86,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <trim prefix="SET" suffixOverrides=",">
             <if test="orderId != null">order_id = #{orderId},</if>
             <if test="productId != null">product_id = #{productId},</if>
+            <if test="customerName != null and customerName != ''">#{customerName},</if>
             <if test="quantity != null">quantity = #{quantity},</if>
             <if test="deadline != null">deadline = #{deadline},</if>
             <if test="qualityStandard != null">quality_standard = #{qualityStandard},</if>
@@ -95,12 +100,6 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
     </delete>
 
     <delete id="deleteSubOrderBySubOrderIds" parameterType="String">
-        -- 先删除生产计划中关联的子订单
-        DELETE FROM production_plan
-        WHERE sub_order_id IN
-        <foreach item="subOrderId" collection="array" open="(" separator="," close=")">
-        #{subOrderId}
-        </foreach>
         -- 然后删除子订单
         delete from sub_order where sub_order_id in 
         <foreach item="subOrderId" collection="array" open="(" separator="," close=")">

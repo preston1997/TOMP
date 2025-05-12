@@ -8,6 +8,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="orderId"    column="order_id"    />
         <result property="customerId"    column="customer_id"    />
         <result property="customerName" column="customer_name"/>
+        <result property="factoryName"    column="factory_name"    />
         <result property="createTime"    column="create_time"    />
         <result property="status"    column="status"    />
         <result property="cancelReason"    column="cancel_reason"    />
@@ -23,6 +24,7 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         <result property="orderId"    column="order_id"    />
         <result property="productId"    column="product_id"    />
         <result property="quantity"    column="quantity"    />
+        <result property="factoryName"    column="factory_name"    />
         <result property="deadline"    column="deadline"    />
         <result property="qualityStandard"    column="quality_standard"    />
         <result property="productionFile"    column="production_file"    />
@@ -30,15 +32,18 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
 
     <sql id="selectOrdersVo">
         select 
-        o.order_id, o.customer_id, u.user_name as customer_name, 
-        o.create_time, o.status, o.cancel_reason, o.total_amount 
+        o.order_id, o.customer_id, u.user_name as customer_name,
+        o.create_time, o.status, o.cancel_reason, o.total_amount
     from orders o
     left join sys_user u on o.customer_id = u.user_id
+--     LEFT JOIN sub_order so ON o.order_id = so.order_id
+--     LEFT JOIN production_plan pp ON so.sub_order_id = pp.sub_order_id
+--     LEFT JOIN factory f ON pp.factory_id = f.factory_id
     </sql>
 
     <select id="selectOrdersList" parameterType="Orders" resultMap="OrdersResult">
         <include refid="selectOrdersVo"/>
-        <where>  
+        <where>
             <if test="orderId != null "> and order_id = #{orderId}</if>
             <if test="customerId != null "> and customer_id = #{customerId}</if>
             <if test="params.beginCreateTime != null and params.beginCreateTime != '' and params.endCreateTime != null and params.endCreateTime != ''"> and create_time between #{params.beginCreateTime} and #{params.endCreateTime}</if>
@@ -58,6 +63,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         select sub_order_id, order_id, product_id, quantity, deadline, quality_standard, production_file
         from sub_order
         where order_id = #{order_id}
+    </select>
+
+    <select id="selectSubOrderIdsByOrderIds" parameterType="long[]" resultType="java.lang.Long">
+        SELECT sub_order_id FROM sub_order 
+        WHERE order_id IN 
+        <foreach collection="array" item="orderId" open="(" separator="," close=")">
+            #{orderId}
+        </foreach>
     </select>
 
     <insert id="insertOrders" parameterType="Orders" useGeneratedKeys="true" keyProperty="orderId">
@@ -139,4 +152,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
             ( #{item.subOrderId}, #{item.orderId}, #{item.productId}, #{item.quantity}, #{item.deadline}, #{item.qualityStandard}, #{item.productionFile})
         </foreach>
     </insert>
+
+    <!-- 批量更新订单状态 -->
+    <update id="batchUpdateOrderStatus">
+        UPDATE sub_order  <!-- 假设子订单表名为 sub_order -->
+        SET status = #{status}
+        WHERE sub_order_id IN 
+        <foreach collection="subOrderIds" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
 </mapper>

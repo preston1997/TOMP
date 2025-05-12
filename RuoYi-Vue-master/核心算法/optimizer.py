@@ -7,11 +7,12 @@ import random
 import numpy as np
 from deap import algorithms, base, creator, tools
 from datetime import timedelta, datetime, date
-
+import json
 from sqlalchemy import text
 
 from database import DatabaseManager
 from models import Factory, Order, SubOrder
+from visualizer import AdvancedVisualizer
 
 
 def _evaluate_wrapper(individual, factories, orders):
@@ -126,32 +127,118 @@ class EnhancedOptimizer:
                 if not any(f.id == pants_factory_id for f in self.factories):
                     raise ValueError(f"无效裤子工厂ID: {pants_factory_id}")
 
-
+            factory_schedules = AdvancedVisualizer._calculate_real_schedules(
+                self.factories, self.orders, solution
+            )
 
             for idx, order in enumerate(self.orders):
                 # 上衣子订单
+                top_factory_id = solution[2 * idx]
+                top_factory = next(f for f in self.factories if f.id == top_factory_id)
+                top_schedule = next(
+                    (task for task in factory_schedules[top_factory_id]['top']
+                     if task[2] == order.id), None
+                )
+                if top_schedule:
+                    start_date = top_schedule[0]
+                    end_date = top_schedule[1]
+                    daily_progress = self._calculate_daily_progress(
+                        order.tops.quantity,  # 订单总量
+                        start_date,  # 开始时间
+                        end_date,  # 结束时间
+                        top_factory.capacity['top']  # 工厂日产能
+                    )
+                else:
+                    start_date = datetime.now()
+                    end_date = datetime.now() + timedelta(days=1)
+                    daily_progress = {}
+
                 session.execute(text("""
                     INSERT INTO production_plan 
-                    (sub_order_id, factory_id, start_date, end_date, current_status)
-                    VALUES (:sub_order_id, :factory_id, :start_date, :end_date, 'PROCESSING')
+                    (sub_order_id, factory_id, start_date, end_date, current_status,daily_progress)
+                    VALUES (:sub_order_id, :factory_id, :start_date, :end_date, 'PROCESSING', :daily_progress)
                 """), {
                     'sub_order_id': order.tops.id,
-                    'factory_id': solution[2*idx],
-                    'start_date': datetime.now().date(),
-                    'end_date': (datetime.now() + timedelta(days=7)).date()
+                    'factory_id': top_factory_id,
+                    'start_date': start_date,
+                    'end_date': end_date,
+                    'daily_progress': json.dumps(daily_progress, ensure_ascii=False)
                 })
-                
-                # 裤子子订单
+
+                # 裤子子订单同理
+                pants_factory_id = solution[2 * idx + 1]
+                pants_factory = next(f for f in self.factories if f.id == pants_factory_id)
+                pants_schedule = next(
+                    (task for task in factory_schedules[pants_factory_id]['pants']
+                     if task[2] == order.id), None
+                )
+                if pants_schedule:
+                    start_date = pants_schedule[0]
+                    end_date = pants_schedule[1]
+                    daily_progress = self._calculate_daily_progress(
+                        order.pants.quantity,  # 订单总量
+                        start_date,  # 开始时间
+                        end_date,  # 结束时间
+                        pants_factory.capacity['pants']   # 工厂日产能
+                    )
+                else:
+                    start_date = datetime.now()
+                    end_date = datetime.now() + timedelta(days=1)
+                    daily_progress = {}
+
                 session.execute(text("""
                     INSERT INTO production_plan 
-                    (sub_order_id, factory_id, start_date, end_date, current_status)
-                    VALUES (:sub_order_id, :factory_id, :start_date, :end_date, 'PROCESSING')
+                    (sub_order_id, factory_id, start_date, end_date, current_status, daily_progress)
+                    VALUES (:sub_order_id, :factory_id, :start_date, :end_date, 'PROCESSING', :daily_progress)
                 """), {
                     'sub_order_id': order.pants.id,
-                    'factory_id': solution[2*idx+1],
-                    'start_date': datetime.now().date(),
-                    'end_date': (datetime.now() + timedelta(days=7)).date()
+                    'factory_id': pants_factory_id,
+                    'start_date': start_date,
+                    'end_date': end_date,
+                    'daily_progress': json.dumps(daily_progress, ensure_ascii=False)
                 })
+
+    def _calculate_daily_progress(self, total_quantity, start_time, end_time, daily_capacity):
+        """
+        计算每日预计生产量
+        参数:
+            total_quantity: 订单总量
+            start_time: 生产开始时间（datetime）
+            end_time: 生产结束时间（datetime）
+            daily_capacity: 工厂日产能（件/天）
+        返回:
+            dict: 格式为 {"YYYY-MM-DD": 数量}
+        """
+        daily_progress = {}
+        current_time = start_time
+        remaining_quantity = total_quantity
+
+        # 按天遍历生产周期
+        while current_time < end_time and remaining_quantity > 0:
+            # 计算当前日期（按自然日划分）
+            current_date = current_time.date()
+            next_day = current_date + timedelta(days=1)
+
+            # 计算当日有效生产时间（小时）
+            day_start = max(current_time, datetime.combine(current_date, datetime.min.time()))
+            day_end = min(end_time, datetime.combine(next_day, datetime.min.time()))
+            hours_available = (day_end - day_start).total_seconds() / 3600
+
+            # 计算当日产量（基于小时产能）
+            daily_production = min(
+                remaining_quantity,
+                int(hours_available * (daily_capacity / 24))  # 小时产能 = 日产能 / 24
+            )
+
+            # 记录到字典
+            daily_progress[str(current_date)] = daily_production
+            remaining_quantity -= daily_production
+            current_time = day_end  # 移动到下一天
+
+        return daily_progress
+
+
+
 
 
 

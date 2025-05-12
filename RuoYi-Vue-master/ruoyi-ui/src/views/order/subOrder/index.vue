@@ -100,7 +100,11 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="主订单ID" align="center" prop="orderId" />
       <el-table-column label="子订单ID" align="center" prop="subOrderId" />
-      <el-table-column label="产品类型" align="center" prop="productId" />
+      <el-table-column label="产品类型" align="center">
+        <template slot-scope="scope">
+          <span>{{ getProductTypeName(scope.row.productId) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="订购数量" align="center" prop="quantity" />
       <el-table-column label="交货期限" align="center" prop="deadline" width="180">
         <template slot-scope="scope">
@@ -138,25 +142,45 @@
     />
 
     <!-- 添加或修改子订单列表对话框 -->
-    <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
-      <el-form ref="form" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="主订单ID" prop="orderId">
-          <el-input v-model="form.orderId" placeholder="请输入主订单ID" />
-        </el-form-item>
-        <el-form-item label="产品类型" prop="productId">
-          <el-input v-model="form.productId" placeholder="请输入产品类型" />
-        </el-form-item>
-        <el-form-item label="订购数量" prop="quantity">
-          <el-input v-model="form.quantity" placeholder="请输入订购数量" />
-        </el-form-item>
-        <el-form-item label="交货期限" prop="deadline">
-          <el-date-picker clearable
-            v-model="form.deadline"
-            type="date"
-            value-format="yyyy-MM-dd"
-            placeholder="请选择交货期限">
-          </el-date-picker>
-        </el-form-item>
+    <el-dialog :title="title" :visible.sync="open" width="800px" append-to-body>
+        <el-form ref="form" :model="form" :rules="rules" label-width="80px">
+          <!-- 主订单ID + 产品类型（一行两列） -->
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="主订单ID" prop="orderId" >
+                <el-input v-model="form.orderId" placeholder="请输入主订单ID"  disabled="true"/>
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="产品类型" prop="productId">
+
+                  <el-select v-model="form.productId" placeholder="请选择">
+                    <el-option label="衣服" value="1" />
+          <el-option label="裤子" value="2" />
+                  </el-select>
+                
+              </el-form-item>
+            </el-col>
+          </el-row>
+      
+          <!-- 订购数量 + 交货期限（一行两列） -->
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-form-item label="订购数量" prop="quantity">
+                <el-input v-model="form.quantity" placeholder="请输入订购数量" />
+              </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="交货期限" prop="deadline">
+                <el-date-picker clearable
+                  v-model="form.deadline"
+                  type="date"
+                  value-format="yyyy-MM-dd"
+                  placeholder="请选择交货期限">
+                </el-date-picker>
+              </el-form-item>
+            </el-col>
+          </el-row>
         <el-form-item label="质量要求" prop="qualityStandard">
           <el-input v-model="form.qualityStandard" placeholder="请输入质量要求" />
         </el-form-item>
@@ -175,9 +199,18 @@
         <el-table :data="productionPlanList" :row-class-name="rowProductionPlanIndex" @selection-change="handleProductionPlanSelectionChange" ref="productionPlan">
           <el-table-column type="selection" width="50" align="center" />
           <el-table-column label="序号" align="center" prop="index" width="50"/>
-          <el-table-column label="生产工厂" prop="factoryId" width="150">
+          <el-table-column label="生产工厂" prop="factoryId" width="100">
             <template slot-scope="scope">
               <el-input v-model="scope.row.factoryId" placeholder="请输入生产工厂" />
+            </template>
+          </el-table-column>
+          <el-table-column label="当前状态" prop="currentStatus" width="150">
+            <template slot-scope="scope">
+              <el-select v-model="scope.row.currentStatus" placeholder="请选择当前状态">
+                <el-option label="处理中" value="PROCESSING" />
+      <el-option label="已取消" value="CANCELED" />
+      <el-option label="已完成" value="FINISHED" />
+              </el-select>
             </template>
           </el-table-column>
           <el-table-column label="计划开始日期" prop="startDate" width="240">
@@ -195,13 +228,7 @@
               <el-date-picker clearable v-model="scope.row.actualEndDate" type="date" value-format="yyyy-MM-dd" placeholder="请选择实际完成日期" />
             </template>
           </el-table-column>
-          <el-table-column label="当前状态" prop="currentStatus" width="150">
-            <template slot-scope="scope">
-              <el-select v-model="scope.row.currentStatus" placeholder="请选择当前状态">
-                <el-option label="请选择字典生成" value="" />
-              </el-select>
-            </template>
-          </el-table-column>
+          
         </el-table>
       </el-form>
       <div slot="footer" class="dialog-footer">
@@ -280,6 +307,16 @@ export default {
     this.getList();
   },
   methods: {
+    getProductTypeName(productId) {
+    switch (Number(productId)) {
+      case 1:
+        return '上衣';
+      case 2:
+        return '裤子';
+      default:
+        return '未知类型';
+    }
+  },
     /** 查询子订单列表列表 */
     getList() {
       this.loading = true;

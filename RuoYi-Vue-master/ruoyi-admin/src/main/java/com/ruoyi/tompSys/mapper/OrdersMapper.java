@@ -63,10 +63,17 @@ public interface OrdersMapper
     /**
      * 批量删除生产计划列表
      *
-     * @param orderIds 需要删除的数据主键集合
+     * @param orderId 需要删除的数据主键集合
      * @return 结果
      */
     public int deleteProductionPlanByOrderId(Long orderId);
+
+    /**
+     * 批量删除生产计划列表
+     *
+     * @param orderIds 需要删除的数据主键集合
+     * @return 结果
+     */
     public int deleteProductionPlanByOrderIds(Long[] orderIds);
 
     /**
@@ -76,6 +83,8 @@ public interface OrdersMapper
      * @return 结果
      */
     public int deleteSubOrderByOrderIds(Long[] orderIds);
+
+    
     
     /**
      * 批量新增子订单列表
@@ -84,6 +93,13 @@ public interface OrdersMapper
      * @return 结果
      */
     public int batchSubOrder(List<SubOrder> subOrderList);
+
+    /**
+ * 根据订单ID数组查询子订单ID列表
+ * @param orderIds 订单ID数组
+ * @return 子订单ID列表
+ */
+List<Long> selectSubOrderIdsByOrderIds(Long[] orderIds);
     
 
     /**
@@ -93,4 +109,14 @@ public interface OrdersMapper
      * @return 结果
      */
     public int deleteSubOrderByOrderId(Long orderId);
+
+     /**
+     * 批量更新子订单状态
+     * 
+     * @param subOrderIds 子订单ID列表
+     * @param status 目标状态
+     * @return 更新成功的记录数
+     */
+    public int batchUpdateOrderStatus(List<Long> subOrderIds, String status);
+
 }

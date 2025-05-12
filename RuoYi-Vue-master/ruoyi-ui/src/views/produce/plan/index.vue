@@ -106,7 +106,11 @@
       <el-table-column type="selection" width="55" align="center" />
       <el-table-column label="计划ID" align="center" prop="planId" />
       <el-table-column label="关联子订单" align="center" prop="subOrderId" />
-      <el-table-column label="生产工厂" align="center" prop="factoryId" />
+      <el-table-column label="生产工厂" align="center">
+        <template slot-scope="scope">
+          <span>{{ getFactoryName(scope.row.factoryId) }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="计划开始日期" align="center" prop="startDate" width="180">
         <template slot-scope="scope">
           <span>{{ parseTime(scope.row.startDate, '{y}-{m}-{d}') }}</span>
@@ -122,7 +126,7 @@
           <span>{{ parseTime(scope.row.actualEndDate, '{y}-{m}-{d}') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="每日进度" align="center" prop="dailyProgress" />
+      <el-table-column label="计划进度" align="center" prop="dailyProgress" />
       <el-table-column label="当前状态" align="center" prop="currentStatus" />
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
@@ -140,6 +144,13 @@
             @click="handleDelete(scope.row)"
             v-hasPermi="['produce:plan:remove']"
           >删除</el-button>
+          <el-button
+        size="mini"
+        type="text"
+        icon="el-icon-picture"
+        @click="handleGanttChart(scope.row.planId)"
+        v-hasPermi="['produce:plan:view']"
+      >查看甘特图</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -151,6 +162,19 @@
       :limit.sync="queryParams.pageSize"
       @pagination="getList"
     />
+
+    <!-- 甘特图弹窗 -->
+  <el-dialog
+    title="生产甘特图"
+    :visible.sync="ganttDialogVisible"
+    width="90%"
+    append-to-body
+    @close="handleGanttDialogClose"
+  >
+    <div class="gantt-container">
+      <div ref="ganttChart" style="width: 100%; height: 600px"></div>
+    </div>
+  </el-dialog>
 
     <!-- 添加或修改生产计划对话框 -->
     <el-dialog :title="title" :visible.sync="open" width="500px" append-to-body>
@@ -226,11 +250,17 @@
 
 <script>
 import { listPlan, getPlan, delPlan, addPlan, updatePlan } from "@/api/produce/plan";
+import { listFactorys, getFactorys, delFactorys, addFactorys, updateFactorys } from "@/api/factory/factorys";
+import { getPlanDetail } from '@/api/produce/plan' // 新增：导入 API 函数
+import * as echarts from 'echarts';  // 新增：导入 ECharts 库
+import { parseTime } from "@/utils";
+
 
 export default {
   name: "Plan",
   data() {
     return {
+      factoryOptions: [],  // 新增：存储工厂ID-名称映射（格式示例：[{id: 1, name: '工厂A'}, ...]）
       // 遮罩层
       loading: true,
       // 选中数组
@@ -287,13 +317,32 @@ export default {
         endDate: [
           { required: true, message: "计划完成日期不能为空", trigger: "blur" }
         ],
-      }
+      },
+      ganttDialogVisible: false,  // 甘特图弹窗显示状态
+      currentPlanId: null,        // 当前选中的计划ID
+      ganttChart: null            // ECharts实例（用于销毁）
     };
   },
   created() {
     this.getList();
+    this.getFactoryList();
   },
   methods: {
+    // 新增：获取工厂列表接口（需根据实际后端API调整）
+    async getFactoryList() {
+      const params = {
+        pageNum: 1,
+        pageSize: 1000, // 假设一次性获取所有工厂
+      };
+      const res = await listFactorys(params);
+      this.factoryOptions = res.rows;
+    },
+
+    // 新增：根据工厂ID获取名称
+    getFactoryName(factoryId) {
+      const factory = this.factoryOptions.find(item => item.factoryId === factoryId);
+      return factory ? factory.factoryName : '未知工厂';
+    },
     /** 查询生产计划列表 */
     getList() {
       this.loading = true;
@@ -437,6 +486,125 @@ export default {
       this.download('produce/plan/export', {
         ...this.queryParams
       }, `plan_${new Date().getTime()}.xlsx`)
+    },
+     /** 查看甘特图（弹窗形式） */
+     handleGanttChart(planId) {
+      this.currentPlanId = planId;
+      this.ganttDialogVisible = true;
+      this.loadGanttData();  // 加载甘特图数据
+    },
+
+    /** 加载甘特图数据 */
+    async loadGanttData() {
+      if (!this.currentPlanId) return;
+      try {
+        const response = await getPlanDetail(this.currentPlanId);
+        // 关键修复：确保 planData 是数组（若后端返回单对象，用数组包裹）
+        const planData = Array.isArray(response.data) ? response.data : [response.data];
+        this.renderGanttChart(planData);
+      } catch (error) {
+        console.error("甘特图数据加载失败:", error);
+      }
+    },
+
+    /** 渲染甘特图（优化版） */
+renderGanttChart(planData) {
+  if (this.ganttChart) {
+    this.ganttChart.dispose();
+  }
+  this.ganttChart = echarts.init(this.$refs.ganttChart);
+  
+  // 数据处理
+  const plan = planData[0]; // 假设单条计划数据
+  const dailyProgress = JSON.parse(plan.dailyProgress);
+  const dates = Object.keys(dailyProgress).sort();
+  const progressValues = dates.map(date => dailyProgress[date]);
+  
+  // 生成累积进度数据
+  let cumulative = 0;
+  const cumulativeProgress = progressValues.map(value => {
+    cumulative += value;
+    return cumulative;
+  });
+
+  const option = {
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params) => {
+        const date = params[0].axisValue;
+        const planned = params[0].data;
+        const actual = params[1] ? params[1].data : 0;
+        return `
+          <strong>${date}</strong><br/>
+          计划生产量: ${planned}件<br/>
+          实际完成: ${actual}件
+        `;
+      }
+    },
+    xAxis: {
+      type: 'time',
+      splitLine: { show: false },
+      axisLabel: { 
+        formatter: '{yyyy}-{MM}-{dd}',
+      }
+    },
+    yAxis: [{
+      type: 'value',
+      name: '生产量（件）',
+      position: 'left'
+    }],
+    series: [
+      // 计划时间段背景
+      {
+        type: 'bar',
+        name: '计划周期',
+        data: [[plan.startDate, plan.endDate, plan.quantity]],
+        yAxisIndex: 0,
+        itemStyle: {
+          color: 'rgba(200, 200, 200, 0.3)'
+        },
+        barCategoryGap: '0%',
+        barWidth: 30
+      },
+      // 每日实际进度
+      {
+        type: 'bar',
+        name: '每日完成',
+        data: dates.map(date => [date, dailyProgress[date]]),
+        itemStyle: {
+          color: '#36a3f7'
+        },
+        barWidth: 20
+      },
+      // 累积进度线
+      {
+        type: 'line',
+        name: '累积进度',
+        data: dates.map((date, i) => [date, cumulativeProgress[i]]),
+        symbol: 'none',
+        lineStyle: {
+          color: '#ff6b6b',
+          width: 2
+        }
+      }
+    ],
+    dataZoom: [{
+      type: 'inside',
+      xAxisIndex: 0,
+      start: 0,
+      end: 100
+    }]
+  };
+
+  this.ganttChart.setOption(option);
+},
+
+    /** 关闭甘特图弹窗时销毁图表 */
+    handleGanttDialogClose() {
+      if (this.ganttChart) {
+        this.ganttChart.dispose();
+        this.ganttChart = null;
+      }
     }
   }
 };

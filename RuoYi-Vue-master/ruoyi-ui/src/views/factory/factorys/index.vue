@@ -1,9 +1,9 @@
 <template>
   <div class="app-container">
     <el-form :model="queryParams" ref="queryForm" size="small" :inline="true" v-show="showSearch" label-width="68px">
-      <el-form-item label="工厂ID" prop="factoryId">
+      <!-- <el-form-item label="工厂ID" prop="factoryId">
         <el-input v-model="queryParams.factoryId" placeholder="请输入工厂ID" clearable @keyup.enter.native="handleQuery" />
-      </el-form-item>
+      </el-form-item> -->
       <el-form-item label="工厂名" prop="factoryName">
         <el-input v-model="queryParams.factoryName" placeholder="请输入工厂名" clearable @keyup.enter.native="handleQuery" />
       </el-form-item>
@@ -17,7 +17,7 @@
         <el-input v-model="queryParams.capacityPants" placeholder="请输入裤子产能" clearable
           @keyup.enter.native="handleQuery" />
       </el-form-item>
-      <el-form-item label="上衣成本" prop="costTop">
+      <!-- <el-form-item label="上衣成本" prop="costTop">
         <el-input v-model="queryParams.costTop" placeholder="请输入上衣成本" clearable @keyup.enter.native="handleQuery" />
       </el-form-item>
       <el-form-item label="裤子成本" prop="costPants">
@@ -29,7 +29,7 @@
       <el-form-item label="裤子良品率" prop="qualityPants">
         <el-input v-model="queryParams.qualityPants" placeholder="请输入裤子良品率" clearable
           @keyup.enter.native="handleQuery" />
-      </el-form-item>
+      </el-form-item> -->
       <el-form-item>
         <el-button type="primary" icon="el-icon-search" size="mini" @click="handleQuery">搜索</el-button>
         <el-button icon="el-icon-refresh" size="mini" @click="resetQuery">重置</el-button>
@@ -67,14 +67,29 @@
       <el-table-column label="裤子成本" align="center" prop="costPants" />
       <el-table-column label="上衣良品率" align="center" prop="qualityTop" />
       <el-table-column label="裤子良品率" align="center" prop="qualityPants" />
-      <el-table-column label="工厂状态" align="center" prop="isActive" />
-      <el-table-column label="工作时间表" align="center" prop="workSchedule" />
+      <el-table-column label="工厂状态" align="center">
+  <template slot-scope="scope">
+    <el-tag :type="scope.row.isActive? 'success' : 'danger'">
+      {{ scope.row.isActive? '启用' : '停用' }}
+    </el-tag>
+  </template>
+</el-table-column> 
+      <!-- <el-table-column label="工作时间表" align="center" prop="workSchedule" /> -->
       <el-table-column label="操作" align="center" class-name="small-padding fixed-width">
         <template slot-scope="scope">
+          <el-button size="mini" type="text" icon="el-icon-picture" @click="showImage(scope.row)">查看生产计划</el-button>
           <el-button size="mini" type="text" icon="el-icon-edit" @click="handleUpdate(scope.row)"
             v-hasPermi="['factory:factorys:edit']">修改</el-button>
           <el-button size="mini" type="text" icon="el-icon-delete" @click="handleDelete(scope.row)"
             v-hasPermi="['factory:factorys:remove']">删除</el-button>
+            <el-button 
+      size="mini" 
+      :type="scope.row.isActive ? 'danger' : 'success'" 
+      icon="el-icon-switch-button" 
+      @click="handleStatusChange(scope.row)"
+      v-hasPermi="['factory:factorys:edit']">
+      {{ scope.row.isActive ? '停用' : '启用' }}
+    </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -91,6 +106,15 @@
         <el-form-item label="关联用户ID" prop="userId">
           <el-input v-model="form.userId" placeholder="请输入关联用户ID" :disabled="!isAdmin" />
         </el-form-item>
+        <el-form-item label="工厂状态" prop="isActive">
+  <el-switch
+    v-model="form.isActive"
+    active-text="启用"
+    inactive-text="停用"
+    :active-value="true"
+    :inactive-value="false">
+  </el-switch>
+</el-form-item>
         <el-form-item label="上衣产能" prop="capacityTop">
           <el-input v-model="form.capacityTop" placeholder="请输入上衣产能" />
         </el-form-item>
@@ -159,6 +183,30 @@
         <el-button @click="cancel">取 消</el-button>
       </div>
     </el-dialog>
+
+    <el-dialog 
+    :visible.sync="imageDialogVisible"
+    width="80%"
+    :close-on-click-modal="false"
+    :destroy-on-close="true" 
+    @closed="handleCloseImage"
+    custom-class="fullscreen-image-dialog">
+    
+    <!-- 使用v-if确保每次重新创建 -->
+    <div v-if="imageDialogVisible" class="image-wrapper">
+      <el-image 
+        :key="imageKey" 
+        :src="currentImageUrl"
+        :preview-src-list="[currentImageUrl]"
+    fit="contain" 
+    style="width: 100%; height: 60vh">
+    <div slot="error" class="image-slot">
+      <i class="el-icon-picture-outline"></i>
+      <span>暂无图片</span>
+    </div>
+  </el-image>
+    </div>
+</el-dialog>
   </div>
 </template>
 
@@ -170,6 +218,9 @@ export default {
   name: "Factorys",
   data() {
     return {
+      imageDialogVisible: false, // 控制图片对话框显示
+    currentImageUrl: '',
+    imageKey: 0, // 新增key值用于强制刷新
       user: {},
       isAdmin: false,
       // 遮罩层
@@ -214,7 +265,7 @@ export default {
       // 表单校验
       rules: {
         factoryName: [
-          { required: true, message: "工厂名不能为空", trigger: "blur" }
+          { required: true, message: "工厂名不能为空",  trigger: "blur" }
         ],
         userId: [
           { required: true, message: "关联用户ID不能为空", trigger: "blur" }
@@ -237,6 +288,9 @@ export default {
         qualityPants: [
           { required: true, message: "裤子良品率不能为空", trigger: "blur" }
         ],
+        isActive: [
+    { required: true, message: "状态不能为空", trigger: "blur" }
+  ],
       }
     };
   },
@@ -245,6 +299,28 @@ export default {
     this.getList();
   },
   methods: {
+    showImage(row) {
+    // 根据工厂ID拼接图片路径（根据实际情况调整路径）
+    this.currentImageUrl = `/factory_images/factory_${row.factoryId}.png?t=${Date.now()}`
+    this.imageKey = Date.now() // 强制重新创建组件
+    this.imageDialogVisible = true
+  },
+    // 状态修改
+handleStatusChange(row) {
+  const text = row.isActive ? "停用" : "启用";
+  this.$modal.confirm(`确认要${text}【${row.factoryName}】吗？`).then(() => {
+    const newStatus = !row.isActive;
+    updateFactorys({
+      ...row,
+      isActive: newStatus
+    }).then(() => {
+    this.$modal.msgSuccess(`${text}成功`);
+    // 直接更新当前行的状态，避免重新请求整个列表
+    this.$set(row, 'isActive', newStatus);
+  });
+  this.getList();
+  }).catch(() => {});
+},
     /** 查询工厂信息列表 */
     async getList() {
 
@@ -254,8 +330,7 @@ export default {
       };
       const res = await listFactorys(params);
       this.factorysList = res.rows;
-      this.total = response.total;
-
+      this.total = response.total
     },
     
     // 取消按钮
@@ -350,7 +425,7 @@ export default {
     /** 删除按钮操作 */
     handleDelete(row) {
       const factoryIds = row.factoryId || this.ids;
-      this.$modal.confirm('是否确认删除工厂信息编号为"' + factoryIds + '"的数据项？').then(function () {
+      this.$modal.confirm('是否确认删除工厂信息编号为"' + factoryIds + '"的数据项？').then(()=>{
         return delFactorys(factoryIds);
       }).then(() => {
         this.getList();

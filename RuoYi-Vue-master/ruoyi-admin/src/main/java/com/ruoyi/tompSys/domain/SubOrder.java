@@ -47,12 +47,22 @@ public class SubOrder extends BaseEntity
     @Excel(name = "生产要求文件")
     private String productionFile;
 
+    @Excel(name = "客户姓名")
+    private String customerName;
+
     /** 生产计划信息 */
     private List<ProductionPlan> productionPlanList;
 
     public void setSubOrderId(Long subOrderId) 
     {
         this.subOrderId = subOrderId;
+    }
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
     }
 
     public Long getSubOrderId() 
@@ -135,6 +145,7 @@ public class SubOrder extends BaseEntity
         return new ToStringBuilder(this,ToStringStyle.MULTI_LINE_STYLE)
             .append("subOrderId", getSubOrderId())
             .append("orderId", getOrderId())
+            .append("customerName", getCustomerName())
             .append("productId", getProductId())
             .append("quantity", getQuantity())
             .append("deadline", getDeadline())

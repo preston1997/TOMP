@@ -11,7 +11,7 @@ import com.ruoyi.tompSys.domain.SubOrder;
 import com.ruoyi.tompSys.mapper.OrdersMapper;
 import com.ruoyi.tompSys.domain.Orders;
 import com.ruoyi.tompSys.service.IOrdersService;
-
+import com.ruoyi.tompSys.mapper.ProductionPlanMapper;
 /**
  * 订单列表Service业务层处理
  * 
@@ -23,6 +23,9 @@ public class OrdersServiceImpl implements IOrdersService
 {
     @Autowired
     private OrdersMapper ordersMapper;
+    // 新增注入ProductionPlanMapper用于操作生产计划
+    @Autowired
+    private ProductionPlanMapper productionPlanMapper;
 
     /**
      * 查询订单列表
@@ -89,6 +92,8 @@ public class OrdersServiceImpl implements IOrdersService
     @Override
     public int deleteOrdersByOrderIds(Long[] orderIds)
     {
+
+        // 3. 原删除子订单逻辑
         ordersMapper.deleteSubOrderByOrderIds(orderIds);
         return ordersMapper.deleteOrdersByOrderIds(orderIds);
     }
@@ -107,6 +112,9 @@ public class OrdersServiceImpl implements IOrdersService
         ordersMapper.deleteSubOrderByOrderId(orderId);
         return ordersMapper.deleteOrdersByOrderId(orderId);
     }
+
+   
+
 
     /**
      * 新增子订单列表信息
@@ -131,4 +139,5 @@ public class OrdersServiceImpl implements IOrdersService
             }
         }
     }
+    
 }

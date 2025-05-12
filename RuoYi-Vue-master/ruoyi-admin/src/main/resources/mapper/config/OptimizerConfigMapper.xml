@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.tompSys.mapper.OptimizerConfigMapper">
+    
+    <resultMap type="OptimizerConfig" id="OptimizerConfigResult">
+        <result property="description"    column="description"    />
+        <result property="dataType"    column="data_type"    />
+        <result property="paramValue"    column="param_value"    />
+        <result property="paramName"    column="param_name"    />
+    </resultMap>
+
+    <sql id="selectOptimizerConfigVo">
+        select description, data_type, param_value, param_name from optimizer_config
+    </sql>
+
+    <select id="selectOptimizerConfigList" parameterType="OptimizerConfig" resultMap="OptimizerConfigResult">
+        <include refid="selectOptimizerConfigVo"/>
+        <where>  
+            <if test="description != null  and description != ''"> and description like concat('%', #{description}, '%')</if>
+            <if test="dataType != null  and dataType != ''"> and data_type = #{dataType}</if>
+            <if test="paramValue != null  and paramValue != ''"> and param_value = #{paramValue}</if>
+            <if test="paramName != null  and paramName != ''"> and param_name like concat('%', #{paramName}, '%')</if>
+        </where>
+    </select>
+    
+    <select id="selectOptimizerConfigByParamName" parameterType="String" resultMap="OptimizerConfigResult">
+        <include refid="selectOptimizerConfigVo"/>
+        where param_name = #{paramName}
+    </select>
+
+    <insert id="insertOptimizerConfig" parameterType="OptimizerConfig">
+        insert into optimizer_config
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="description != null">description,</if>
+            <if test="dataType != null and dataType != ''">data_type,</if>
+            <if test="paramValue != null and paramValue != ''">param_value,</if>
+            <if test="paramName != null">param_name,</if>
+         </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="description != null">#{description},</if>
+            <if test="dataType != null and dataType != ''">#{dataType},</if>
+            <if test="paramValue != null and paramValue != ''">#{paramValue},</if>
+            <if test="paramName != null">#{paramName},</if>
+         </trim>
+    </insert>
+
+    <update id="updateOptimizerConfig" parameterType="OptimizerConfig">
+        update optimizer_config
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="description != null">description = #{description},</if>
+            <if test="dataType != null and dataType != ''">data_type = #{dataType},</if>
+            <if test="paramValue != null and paramValue != ''">param_value = #{paramValue},</if>
+        </trim>
+        where param_name = #{paramName}
+    </update>
+
+    <delete id="deleteOptimizerConfigByParamName" parameterType="String">
+        delete from optimizer_config where param_name = #{paramName}
+    </delete>
+
+    <delete id="deleteOptimizerConfigByParamNames" parameterType="String">
+        delete from optimizer_config where param_name in 
+        <foreach item="paramName" collection="array" open="(" separator="," close=")">
+            #{paramName}
+        </foreach>
+    </delete>
+</mapper>

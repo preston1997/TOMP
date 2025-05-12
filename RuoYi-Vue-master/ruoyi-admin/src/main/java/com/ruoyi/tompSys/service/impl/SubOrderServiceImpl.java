@@ -10,6 +10,9 @@ import com.ruoyi.tompSys.domain.ProductionPlan;
 import com.ruoyi.tompSys.mapper.SubOrderMapper;
 import com.ruoyi.tompSys.domain.SubOrder;
 import com.ruoyi.tompSys.service.ISubOrderService;
+// 新增导入ProductionPlanMapper
+import com.ruoyi.tompSys.mapper.ProductionPlanMapper;
+
 
 /**
  * 子订单列表Service业务层处理
@@ -22,6 +25,8 @@ public class SubOrderServiceImpl implements ISubOrderService
 {
     @Autowired
     private SubOrderMapper subOrderMapper;
+    @Autowired
+    private ProductionPlanMapper productionPlanMapper;
 
     /**
      * 查询子订单列表
@@ -87,7 +92,17 @@ public class SubOrderServiceImpl implements ISubOrderService
     @Override
     public int deleteSubOrderBySubOrderIds(Long[] subOrderIds)
     {
+        // 1. 获取子订单关联的生产计划ID
+// 注入 ProductionPlanMapper 实例，解决无法解析的问题
+
+List<Long> planIds = productionPlanMapper.selectPlanIdsBySubOrderIds(subOrderIds);
+        // 2. 先删除关联的生产日志
+        if (StringUtils.isNotEmpty(planIds)) {
+            productionPlanMapper.deleteProductionLogByPlanIds(planIds.toArray(new Long[0]));
+        }
+        // 3. 再删除生产计划（原逻辑）
         subOrderMapper.deleteProductionPlanBySubOrderIds(subOrderIds);
+        // 4. 最后删除子订单（原逻辑）
         return subOrderMapper.deleteSubOrderBySubOrderIds(subOrderIds);
     }
 

@@ -56,6 +56,22 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         from production_log
         where plan_id = #{plan_id}
     </select>
+    
+    <select id="selectSubOrderIdsByPlanIds" parameterType="Long[]" resultType="Long">
+        SELECT DISTINCT sub_order_id 
+        FROM production_plan 
+        WHERE plan_id IN 
+        <foreach item="planId" collection="array" open="(" separator="," close=")">
+            #{planId}
+        </foreach>
+    </select>
+
+    <select id="selectPlanIdsBySubOrderIds" resultType="java.lang.Long">
+        SELECT plan_id FROM production_plan WHERE sub_order_id IN
+        <foreach collection="array" item="subOrderId" open="(" separator="," close=")">
+            #{subOrderId}
+        </foreach>
+    </select>
 
     <insert id="insertProductionPlan" parameterType="ProductionPlan" useGeneratedKeys="true" keyProperty="planId">
         insert into production_plan
@@ -101,6 +117,14 @@ PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         delete from production_plan where plan_id in 
         <foreach item="planId" collection="array" open="(" separator="," close=")">
             #{planId}
+        </foreach>
+    </delete>
+
+    <delete id="deleteProductionPlanBySubOrderIds">
+        DELETE FROM production_plan 
+        WHERE sub_order_id IN 
+        <foreach collection="array" item="subOrderId" open="(" separator="," close=")">
+            #{subOrderId}
         </foreach>
     </delete>
     

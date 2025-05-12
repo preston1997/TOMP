@@ -17,6 +17,13 @@ export function getPlan(planId) {
   })
 }
 
+export function getPlanDetail(planId) {
+  return request({
+    url: '/produce/plan/detail/' + planId,
+    method: 'get'
+  })
+}
+
 // 新增生产计划
 export function addPlan(data) {
   return request({

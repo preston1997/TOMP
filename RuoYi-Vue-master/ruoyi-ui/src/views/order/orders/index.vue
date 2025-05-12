@@ -47,8 +47,8 @@
 
     <el-table v-loading="loading" :data="ordersList" @selection-change="handleSelectionChange">
       <el-table-column type="selection" width="55" align="center" />
-      <el-table-column label="订单ID" align="center" prop="orderId" />
-      <el-table-column label="客户ID" align="center" prop="customerId" />
+      <el-table-column label="订单ID" align="center" prop="orderId" width="80" />
+      <el-table-column label="客户ID" align="center" prop="customerId" width="80" />
       <el-table-column label="客户名称" align="center" prop="customerName" />
       <el-table-column label="订单状态" align="center" prop="status" />
       <el-table-column label="取消原因" align="center" prop="cancelReason" />

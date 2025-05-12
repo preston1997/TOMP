@@ -84,4 +84,21 @@ public interface ProductionPlanMapper
      * @return 结果
      */
     public int deleteProductionLogByPlanId(Long planId);
+
+    /**
+     * 根据子订单ID查询关联的生产计划ID
+     * @param subOrderIds 子订单ID数组
+     * @return 生产计划ID列表
+     */
+    public List<Long> selectPlanIdsBySubOrderIds(Long[] subOrderIds);
+
+    /**
+     * 根据子订单ID批量删除生产计划
+     * @param subOrderIds 子订单ID数组
+     * @return 影响行数
+     */
+    int deleteProductionPlanBySubOrderIds(Long[] subOrderIds);
+
+    // 在接口中新增
+    public List<Long> selectSubOrderIdsByPlanIds(Long[] planIds);
 }

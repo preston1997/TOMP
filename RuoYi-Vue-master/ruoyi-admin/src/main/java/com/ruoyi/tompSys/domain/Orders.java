@@ -27,6 +27,10 @@ public class Orders extends BaseEntity
     /** 客户名称（新增字段） */
     @Excel(name = "客户名称")
     private String customerName;
+
+    /** 客户名称（新增字段） */
+    @Excel(name = "工厂名称")
+    private String factoryName;
     
 
     /** 订单状态 */
@@ -46,6 +50,14 @@ public class Orders extends BaseEntity
 
 
     // 添加getter/setter
+    public String getFactoryName() {
+        return factoryName;
+    }
+
+    public void setFactoryName(String factoryName) {
+        this.factoryName = factoryName;
+    }
+
     public String getCustomerName() {
         return customerName;
     }

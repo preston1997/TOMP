@@ -58,4 +58,11 @@ public interface IOrdersService
      * @return 结果
      */
     public int deleteOrdersByOrderId(Long orderId);
+
+
+
+
+    
+
+    
 }
